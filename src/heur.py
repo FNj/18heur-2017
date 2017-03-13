@@ -10,7 +10,6 @@ class StopCriterion(Exception):
 
 
 class Heuristic:
-
     def __init__(self, of, maxeval):
         self.of = of
         self.maxeval = maxeval
@@ -39,7 +38,6 @@ class Heuristic:
 
 
 class ShootAndGo(Heuristic):
-
     def __init__(self, of, maxeval, hmax=np.inf, random_descent=False):
         Heuristic.__init__(self, of, maxeval)
         self.hmax = hmax
@@ -78,6 +76,46 @@ class ShootAndGo(Heuristic):
                 if self.hmax > 0:
                     self.steepest_descent(x)  # local search
 
+        except StopCriterion:
+            return self.report_end()
+        except:
+            raise
+
+
+class SimulatedAnnealing(Heuristic):
+    def __init__(self, of, maxeval, max_temperature=1e4, cooling_rate=3e-3, min_temperature=1, restart_period=np.inf):
+        Heuristic.__init__(self, of, maxeval)
+        assert max_temperature > 0, "Maximum temperature must be positive."
+        self.starting_temperature = max_temperature
+        assert cooling_rate > 0 and cooling_rate < 1, "Cooling rate must be between 0 and 1."
+        self.cooling_coefficient = 1 - cooling_rate
+        assert min_temperature > 0 and min_temperature < max_temperature, "Minimum temperature must be positive" \
+                                                                          " and smaller than maximum temperature."
+        self.min_temperature = min_temperature
+        self.max_exponent = (np.log(self.min_temperature) - np.log(self.starting_temperature)) / np.log(
+            self.cooling_coefficient)
+        assert restart_period % 1 == 0 or restart_period == np.inf, "Restart period must be integral."
+        self.restart_period = restart_period
+        self.steps = 1
+
+    def search(self):
+        try:
+            x = self.of.generate_point()
+            y = self.evaluate(x)
+            while True:
+                if self.steps % self.restart_period == 0:
+                    x = self.best_x
+                    y = self.best_y
+                self.temperature = self.starting_temperature * self.cooling_coefficient ** (
+                    self.neval / self.maxeval * self.max_exponent)  # cool down
+                neighborhood = self.of.get_neighborhood(x, 1)
+                rand_index = np.random.randint(len(neighborhood))
+                candidate_x = neighborhood[rand_index]
+                candidate_y = self.evaluate(candidate_x)
+                if np.exp((y - candidate_y) / self.temperature) > np.random.rand():
+                    x = candidate_x
+                    y = candidate_y
+                self.steps += 1
         except StopCriterion:
             return self.report_end()
         except:

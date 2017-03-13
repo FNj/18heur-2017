@@ -32,7 +32,6 @@ class ObjFun(object):
 
 
 class AirShip(ObjFun):
-
     """1-dimensional demo task from the first excercise."""
 
     def __init__(self):
@@ -45,8 +44,8 @@ class AirShip(ObjFun):
         return np.random.randint(0, 800)
 
     def get_neighborhood(self, x, d):
-        left = [x for x in np.arange(x-1, x-d-1, -1, dtype=int) if x >= 0]
-        right = [x for x in np.arange(x+1, x+d+1, dtype=int) if x < 800]
+        left = [x for x in np.arange(x - 1, x - d - 1, -1, dtype=int) if x >= 0]
+        right = [x for x in np.arange(x + 1, x + d + 1, dtype=int) if x < 800]
         if np.size(left) == 0:
             return right
         elif np.size(right) == 0:
@@ -55,21 +54,20 @@ class AirShip(ObjFun):
             return np.concatenate((left, right))
 
     def evaluate(self, x):
-        px = np.array([0,  50, 100, 300, 400, 700, 799], dtype=int)
-        py = np.array([0, 100,   0,   0,  25,   0,  50], dtype=int)
+        px = np.array([0, 50, 100, 300, 400, 700, 799], dtype=int)
+        py = np.array([0, 100, 0, 0, 25, 0, 50], dtype=int)
         xx = np.arange(0, 800)
         yy = np.interp(xx, px, py)
         return -yy[x]  # negative altitude, becase we are minimizing (to be consistent with other obj. functions)
 
 
 class Sum(ObjFun):
-
     def __init__(self, a, b):
         self.n = np.size(a)  # dimension of the task
         super().__init__(fstar=0, a=a, b=b)
 
     def generate_point(self):
-        return [np.random.randint(self.a[i], self.b[i]+1) for i in np.arange(self.n)]
+        return [np.random.randint(self.a[i], self.b[i] + 1) for i in np.arange(self.n)]
 
     def get_neighborhood(self, x, d):
         assert d == 1, "Sum(x) supports neighbourhood with distance = 1 only"
@@ -90,13 +88,12 @@ class Sum(ObjFun):
 
 
 class SumSinx(ObjFun):
-
     def __init__(self, a, b):
         self.n = np.size(a)  # dimension of the task
         super().__init__(fstar=0, a=a, b=b)
 
     def generate_point(self):
-        return [np.random.randint(self.a[i], self.b[i]+1) for i in np.arange(self.n)]
+        return [np.random.randint(self.a[i], self.b[i] + 1) for i in np.arange(self.n)]
 
     def get_neighborhood(self, x, d):
         assert d == 1, "SumSinx(x) supports neighbourhood with distance = 1 only"
@@ -113,11 +110,10 @@ class SumSinx(ObjFun):
         return nd
 
     def evaluate(self, x):
-        return np.sum(np.abs(x*np.sin(x)))
+        return np.sum(np.abs(x * np.sin(x)))
 
 
 class TSPGrid(ObjFun):
-
     def __init__(self, par_a, par_b, norm=2):
         n = par_a * par_b  # number of cities
 
@@ -130,19 +126,19 @@ class TSPGrid(ObjFun):
         # compute distances based on coordinates
         dist = np.zeros((n, n))
         for i in np.arange(n):
-            for j in np.arange(i+1, n):
-                dist[i, j] = np.linalg.norm(grid[i, :]-grid[j, :], norm)
+            for j in np.arange(i + 1, n):
+                dist[i, j] = np.linalg.norm(grid[i, :] - grid[j, :], norm)
                 dist[j, i] = dist[i, j]
 
-        self.fstar = n+np.mod(n, 2)*(2**(1/norm)-1)
+        self.fstar = n + np.mod(n, 2) * (2 ** (1 / norm) - 1)
         self.n = n
         self.dist = dist
-        self.a = np.zeros(n-1, dtype=np.int)  # n-1 because the first city is pre-determined
-        self.b = np.arange(n-2, -1, -1)
+        self.a = np.zeros(n - 1, dtype=np.int)  # n-1 because the first city is pre-determined
+        self.b = np.arange(n - 2, -1, -1)
 
     def generate_point(self):
-        return [np.random.randint(self.a[i], self.b[i] + 1) for i in np.arange(self.n-1)]
-        #return [np.random.randint(0, i+1) for i in self.a]
+        return [np.random.randint(self.a[i], self.b[i] + 1) for i in np.arange(self.n - 1)]
+        # return [np.random.randint(0, i+1) for i in self.a]
 
     def decode(self, x):
         """
@@ -155,7 +151,7 @@ class TSPGrid(ObjFun):
         ux[0] = 0  # first city is used automatically
         c = np.cumsum(ux)  # cities to be included in the tour
         for k in np.arange(1, self.n):
-            ix = x[k-1]+1  # order index of currently visited city
+            ix = x[k - 1] + 1  # order index of currently visited city
             cc = c[ix]  # currently visited city
             cx[k] = cc  # append visited city into final tour
             c = np.delete(c, ix)  # visited city can not be included in the tour any more
@@ -164,7 +160,7 @@ class TSPGrid(ObjFun):
     def tour_dist(self, cx):
         d = 0
         for i in np.arange(self.n):
-            dx = self.dist[cx[i-1], cx[i]] if i>0 else self.dist[cx[self.n-1], cx[i]]
+            dx = self.dist[cx[i - 1], cx[i]] if i > 0 else self.dist[cx[self.n - 1], cx[i]]
             d += dx
         return d
 
@@ -179,13 +175,13 @@ class TSPGrid(ObjFun):
             # x-lower
             if x[i] > self.a[i]:  # (!) mutation correction .. will be discussed later
                 xl = x.copy()
-                xl[i] = x[i]-1
+                xl[i] = x[i] - 1
                 nd.append(xl)
 
             # x-upper
             if x[i] < self.b[i]:  # (!) mutation correction ..  -- // --
                 xu = x.copy()
-                xu[i] = x[i]+1
+                xu[i] = x[i] + 1
                 nd.append(xu)
 
         return nd
